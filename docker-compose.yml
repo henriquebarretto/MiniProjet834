@@ -42,6 +42,17 @@ services:
     networks:
       - backend
 
+  mongo4:
+    image: mongo:6
+    container_name: mongo4
+    ports:
+      - "27020:27017"
+    environment:
+      MONGO_INITDB_REPLICA_SET_NAME: "rs0"
+    command: [ "mongod", "--replSet", "rs0", "--bind_ip_all" ]
+    networks:
+      - backend
+
   mongo-init:
     image: mongo:6
     depends_on:
