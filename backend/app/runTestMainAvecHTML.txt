@@ -1,0 +1,10 @@
+Démarrez le backend avec :
+
+uvicorn app.main:app --reload
+
+Servez le frontend avec un simple serveur statique :
+
+cd frontend
+python3 -m http.server 8080
+
+Accès dans le navigateur : http://localhost:8080
