@@ -1,1 +1,18 @@
-# index.html
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Chat WebSocket</title>
+  <script defer src="static/js/chat.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+</head>
+<body class="bg-gray-100 flex flex-col items-center justify-center h-screen">
+  <div class="bg-white shadow-xl rounded p-6 w-full max-w-md">
+    <h1 class="text-2xl font-bold mb-4 text-center">💬 Chat WebSocket</h1>
+    <input id="username" class="border p-2 w-full mb-2" type="text" placeholder="Votre nom..." />
+    <div id="messages" class="border p-3 h-60 overflow-y-scroll mb-2 bg-gray-50 text-sm"></div>
+    <input id="messageInput" class="border p-2 w-full mb-2" type="text" placeholder="Votre message..." />
+    <button id="sendBtn" class="bg-blue-500 text-white px-4 py-2 rounded w-full">Envoyer</button>
+  </div>
+</body>
+</html>
