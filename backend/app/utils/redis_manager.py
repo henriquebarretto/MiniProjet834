@@ -1,8 +1,11 @@
-import redis
+import os, redis
 from datetime import datetime
 from fastapi import HTTPException
 
-r = redis.Redis(host='redis', port=6379, decode_responses=True)
+REDIS_HOST = os.getenv("REDIS_HOST", "redis")
+REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
+
+r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
 
 ONLINE_USERS_KEY = "online_users"
 
