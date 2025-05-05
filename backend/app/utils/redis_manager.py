@@ -2,7 +2,6 @@ import redis
 from datetime import datetime
 from fastapi import HTTPException
 
-# Ajuste conforme seu docker-compose (use 'redis' se esse for o nome do serviço Docker)
 r = redis.Redis(host='redis', port=6379, decode_responses=True)
 
 ONLINE_USERS_KEY = "online_users"
