@@ -12,7 +12,7 @@ document.getElementById("sendBtn").addEventListener("click", () => {
 document.getElementById("username").addEventListener("change", () => {
   const username = document.getElementById("username").value.trim();
   if (username) {
-    if (socket) socket.close();
+    // if (socket) socket.close();
     socket = new WebSocket(`ws://localhost:8000/ws/${username}`);
     const messagesBox = document.getElementById("messages");
 

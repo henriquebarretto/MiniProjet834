@@ -2,6 +2,8 @@ Démarrez le backend avec :
 
 uvicorn app.main:app --reload
 
+pip install 'uvicorn[standard]'
+
 Servez le frontend avec un simple serveur statique :
 
 cd frontend
