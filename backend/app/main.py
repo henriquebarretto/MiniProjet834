@@ -37,7 +37,6 @@ async def websocket_endpoint(websocket: WebSocket, username: str):
 
             # Envoyer le message à tous les autres utilisateurs connectés
             for user, conn in connected_users.items():
-                if conn != websocket:
                     await conn.send_text(f"{username} : {data}")
 
     except WebSocketDisconnect:
