@@ -115,6 +115,10 @@ async def websocket_endpoint(websocket: WebSocket):
                 f"{username}: {message}"
             )
 
+            # Atualizar o histórico de conversas
+            user_conversations.setdefault(username, set()).add(recipient)
+            user_conversations.setdefault(recipient, set()).add(username)
+
             # Enviar a mensagem para o destinatário se ele estiver online
             msg_to_send = f"{username}: {message}"
 
