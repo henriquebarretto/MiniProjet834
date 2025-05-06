@@ -1,1 +1,70 @@
-# docker-compose.yml
+services:
+  redis:
+    image: redis:7
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - backend
+
+  mongo1:
+    image: mongo:6
+    container_name: mongo1
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_REPLICA_SET_NAME: "rs0"
+    volumes:
+      - ./mongo-init:/docker-entrypoint-initdb.d
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
+    networks:
+      - backend
+
+  mongo2:
+    image: mongo:6
+    container_name: mongo2
+    ports:
+      - "27018:27017"
+    environment:
+      MONGO_INITDB_REPLICA_SET_NAME: "rs0"
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
+    networks:
+      - backend
+
+  mongo3:
+    image: mongo:6
+    container_name: mongo3
+    ports:
+      - "27019:27017"
+    environment:
+      MONGO_INITDB_REPLICA_SET_NAME: "rs0"
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
+    networks:
+      - backend
+
+  mongo4:
+    image: mongo:6
+    container_name: mongo4
+    ports:
+      - "27020:27017"
+    environment:
+      MONGO_INITDB_REPLICA_SET_NAME: "rs0"
+    command: [ "mongod", "--replSet", "rs0", "--bind_ip_all" ]
+    networks:
+      - backend
+
+  mongo-init:
+    image: mongo:6
+    depends_on:
+      - mongo1
+      - mongo2
+      - mongo3
+    volumes:
+      - ./mongo-init:/scripts
+    entrypoint: ["bash", "-c", "sleep 10 && mongo --host mongo1:27017 /scripts/init-replica.js"]
+    networks:
+      - backend
+
+networks:
+  backend:
+    driver: bridge
