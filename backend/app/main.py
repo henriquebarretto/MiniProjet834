@@ -11,9 +11,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer
 from fastapi import status
 from typing import Dict
+from fastapi import Header
 import secrets
 import sys
 import os
+import json
 
 app = FastAPI()
 
@@ -25,6 +27,9 @@ users_db = {
 }
 
 tokens: Dict[str, str] = {}
+
+# Armazena mensagens pendentes: {"bob": ["alice: Olá", ...]}
+pending_messages: dict[str, list[str]] = {}
 
 
 @app.post("/login")
@@ -60,6 +65,9 @@ app.add_middleware(
 # Stocker les connexions WebSocket par nom d'utilisateur
 connected_users: dict[str, WebSocket] = {}
 
+# Histórico de conversas: {"alice": {"bob", "carol"}, ...}
+user_conversations: dict[str, set[str]] = {}
+
 
 @app.get("/")
 async def root():
@@ -81,11 +89,52 @@ async def websocket_endpoint(websocket: WebSocket):
     connected_users[username] = websocket
     print(f"{username} connecté.")
 
+    # Enviar mensagens pendentes (se houver)
+    for msg in pending_messages.get(username, []):
+        await websocket.send_text(msg)
+    pending_messages[username] = []
+
     try:
         while True:
             data = await websocket.receive_text()
-            for user, conn in connected_users.items():
-                await conn.send_text(f"{username} : {data}")
+            try:
+                parsed = json.loads(data)
+                recipient = parsed["to"]
+                message = parsed["message"]
+            except (json.JSONDecodeError, KeyError):
+                await websocket.send_text("⚠️ Format de message invalide.")
+                continue
+
+            # Armazena que 'username' conversou com 'recipient'
+            user_conversations.setdefault(username, set()).add(recipient)
+            user_conversations.setdefault(recipient, set()).add(username)
+
+            # Envia para o destinatário se ele estiver online
+            msg_to_send = f"{username} : {message}"
+
+            # Atualiza o histórico
+            user_conversations.setdefault(username, set()).add(recipient)
+            user_conversations.setdefault(recipient, set()).add(username)
+
+            # Envia ou armazena
+            if recipient in connected_users:
+                await connected_users[recipient].send_text(msg_to_send)
+            else:
+                pending_messages.setdefault(recipient, []).append(msg_to_send)
+
     except WebSocketDisconnect:
         del connected_users[username]
         print(f"{username} déconnecté.")
+
+
+@app.get("/contacts")
+async def get_contacts(token: str = Header(...)):
+    username = get_username_by_token(token)
+    contacts = list(user_conversations.get(username, set()))
+    return {"contacts": contacts}
+
+
+@app.get("/users")
+async def list_users(token: str = Header(...)):
+    current_user = get_username_by_token(token)
+    return {"users": [u for u in users_db if u != current_user]}
