@@ -65,38 +65,31 @@ async function loadConversationList() {
   }
 }
 
-async function openChatWith(user) {
-  currentRecipient = user;
-  document.getElementById("chatWithName").textContent = `💬 Chat avec ${user}`;
-  document.getElementById("chatView").classList.remove("hidden");
-  document.getElementById("conversationListView").classList.add("hidden");
+function openChatWith(recipient) {
+  currentRecipient = recipient;
+  document.getElementById("conversationListScreen").classList.add("hidden");
+  document.getElementById("chatScreen").classList.remove("hidden");
+  document.getElementById(
+    "chatHeader"
+  ).textContent = `💬 Chat avec ${recipient}`;
 
+  socket = new WebSocket(`ws://localhost:8000/ws?token=${token}`);
   const messagesBox = document.getElementById("messages");
   messagesBox.innerHTML = "";
 
-  // 🔄 Buscar mensagens anteriores
-  const res = await fetch(`http://localhost:8000/messages/${user}`, {
-    headers: { token: token },
-  });
-
-  if (res.ok) {
-    const data = await res.json();
-    data.messages.forEach((msg) => {
-      const msgElem = document.createElement("div");
-      if (
-        msg.startsWith("Vous :") ||
-        msg.startsWith("you :") ||
-        msg.startsWith(`${username} :`)
-      ) {
-        msgElem.classList.add("text-right", "text-blue-600");
-      }
-      msgElem.textContent = msg;
-      messagesBox.appendChild(msgElem);
-    });
+  socket.onmessage = (event) => {
+    const msg = document.createElement("div");
+    msg.textContent = event.data;
+    messagesBox.appendChild(msg);
     messagesBox.scrollTop = messagesBox.scrollHeight;
-  } else {
-    console.error("Erreur lors du chargement des messages.");
-  }
+  };
+
+  socket.onclose = () => {
+    const msg = document.createElement("div");
+    msg.textContent = "❌ Déconnecté du serveur.";
+    msg.classList.add("text-red-500");
+    messagesBox.appendChild(msg);
+  };
 }
 
 document.getElementById("sendBtn").addEventListener("click", () => {
@@ -144,9 +137,7 @@ userSearchInput.addEventListener("input", () => {
   const query = userSearchInput.value.toLowerCase();
   const items = userSearchList.querySelectorAll("li");
   items.forEach((item) => {
-    item.style.display = item.textContent.toLowerCase().includes(query)
-      ? "block"
-      : "none";
+    item.style.display = item.textContent.toLowerCase().includes(query) ? "block" : "none";
   });
 });
 
@@ -175,3 +166,4 @@ async function loadAllUsers() {
     userSearchList.appendChild(error);
   }
 }
+
