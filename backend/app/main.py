@@ -9,16 +9,22 @@ import secrets
 import sys
 import os
 import json
-
 from app.utils.redis_manager import add_user_online, remove_user_online
-from app.routes import routers
+from app.routes import routers, chat_routes, user_routes
 from app.db.connection import Connection
 
 app = FastAPI()
 
+#mongodb connection
+db = Connection.get_mongo_db()
+
+#to have the history, include api routes 
+app.include_router(chat_routes.router, prefix="/api", tags=["chat"])
+app.include_router(user_routes.router, prefix="/api", tags=["users"])
+
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-# Mock user DB
+#mock user database for demo purposes
 users_db = {
     "alice": {"username": "alice", "password": "1234"},
     "bob": {"username": "bob", "password": "5678"},
@@ -29,7 +35,7 @@ connected_users: dict[str, WebSocket] = {}
 pending_messages: dict[str, list[str]] = {}
 user_conversations: dict[str, set[str]] = {}
 
-# CORS
+#enable CORS for all origins (for development)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -38,13 +44,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# MongoDB + Redis
+#setup connections to MongoDB and Redis on startup
 @app.on_event("startup")
 def startup_event():
     connection = Connection()
     app.state.mongo_db = connection.get_mongo_db()
     app.state.redis_client = connection.get_redis_client()
-    print("✅ Mongo & Redis conectados")
+    print(" Mongo & Redis connected")
 
 @app.post("/login")
 async def login(username: str = Form(...), password: str = Form(...)):
@@ -61,10 +67,6 @@ def get_username_by_token(token: str) -> str:
         raise HTTPException(status_code=401, detail="Invalid token")
     return username
 
-@app.get("/")
-async def root():
-    return {"message": "API de chat avec WebSocket opérationnelle !"}
-
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
@@ -73,13 +75,14 @@ async def websocket_endpoint(websocket: WebSocket):
     try:
         username = get_username_by_token(token)
     except HTTPException:
-        await websocket.send_text("❌ Token invalide.")
+        await websocket.send_text("Invalid token")
         await websocket.close()
         return
 
     connected_users[username] = websocket
     add_user_online(username)
 
+    #send any pending messages
     for msg in pending_messages.get(username, []):
         await websocket.send_text(msg)
     pending_messages[username] = []
@@ -92,9 +95,10 @@ async def websocket_endpoint(websocket: WebSocket):
                 recipient = parsed["to"]
                 message = parsed["message"]
             except:
-                await websocket.send_text("⚠️ Format de message invalide.")
+                await websocket.send_text("Invalid message format")
                 continue
 
+            #track conversation between users
             user_conversations.setdefault(username, set()).add(recipient)
             user_conversations.setdefault(recipient, set()).add(username)
 
@@ -117,3 +121,8 @@ async def get_contacts(token: str = Header(...)):
 async def list_users(token: str = Header(...)):
     current_user = get_username_by_token(token)
     return {"users": [u for u in users_db if u != current_user]}
+
+
+@app.get("/")
+def root():
+    return {"message": "Chat API is running!"}
