@@ -137,7 +137,9 @@ userSearchInput.addEventListener("input", () => {
   const query = userSearchInput.value.toLowerCase();
   const items = userSearchList.querySelectorAll("li");
   items.forEach((item) => {
-    item.style.display = item.textContent.toLowerCase().includes(query) ? "block" : "none";
+    item.style.display = item.textContent.toLowerCase().includes(query)
+      ? "block"
+      : "none";
   });
 });
 
@@ -166,4 +168,3 @@ async function loadAllUsers() {
     userSearchList.appendChild(error);
   }
 }
-

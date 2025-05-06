@@ -23,13 +23,15 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 users_db = {
     "alice": {"username": "alice", "password": "1234"},
-    "bob": {"username": "bob", "password": "5678"},
+    "bob": {"username": "bob", "password": "1234"},
+    "dan": {"username": "dan", "password": "1234"},
+    "henrique": {"username": "henrique", "password": "1234"},
 }
 
 tokens: Dict[str, str] = {}
 
-# Armazena mensagens pendentes: {"bob": ["alice: Olá", ...]}
-pending_messages: dict[str, list[str]] = {}
+# Variável para armazenar o histórico de mensagens
+message_history: dict[str, dict[str, list[str]]] = {}
 
 
 @app.post("/login")
@@ -89,10 +91,10 @@ async def websocket_endpoint(websocket: WebSocket):
     connected_users[username] = websocket
     print(f"{username} connecté.")
 
-    # Enviar mensagens pendentes (se houver)
-    for msg in pending_messages.get(username, []):
-        await websocket.send_text(msg)
-    pending_messages[username] = []
+    # Enviar histórico de mensagens ao usuário, se houver
+    for recipient, messages in message_history.get(username, {}).items():
+        for msg in messages:
+            await websocket.send_text(msg)
 
     try:
         while True:
@@ -105,22 +107,22 @@ async def websocket_endpoint(websocket: WebSocket):
                 await websocket.send_text("⚠️ Format de message invalide.")
                 continue
 
-            # Armazena que 'username' conversou com 'recipient'
-            user_conversations.setdefault(username, set()).add(recipient)
-            user_conversations.setdefault(recipient, set()).add(username)
+            # Armazenar a mensagem no histórico
+            message_history.setdefault(username, {}).setdefault(recipient, []).append(
+                f"{username}: {message}"
+            )
+            message_history.setdefault(recipient, {}).setdefault(username, []).append(
+                f"{username}: {message}"
+            )
 
-            # Envia para o destinatário se ele estiver online
-            msg_to_send = f"{username} : {message}"
+            # Enviar a mensagem para o destinatário se ele estiver online
+            msg_to_send = f"{username}: {message}"
 
-            # Atualiza o histórico
-            user_conversations.setdefault(username, set()).add(recipient)
-            user_conversations.setdefault(recipient, set()).add(username)
-
-            # Envia ou armazena
             if recipient in connected_users:
                 await connected_users[recipient].send_text(msg_to_send)
             else:
-                pending_messages.setdefault(recipient, []).append(msg_to_send)
+                # Se o destinatário não estiver online, a mensagem será armazenada no histórico
+                pass
 
     except WebSocketDisconnect:
         del connected_users[username]
