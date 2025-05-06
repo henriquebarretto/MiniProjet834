@@ -1,4 +1,5 @@
-# main.py
+# backend/app/main.py
+#run with uvicorn app.main:app --reload
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Depends, Form, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer
