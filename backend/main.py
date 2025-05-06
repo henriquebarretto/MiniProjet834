@@ -6,10 +6,10 @@ def main():
     connection = Connection()
 
     mongo_db = connection.get_mongo_db()
-    print(f"Conectado ao MongoDB: {mongo_db.name}")
+    print(f"Conected to MongoDB: {mongo_db.name}")
 
     redis_client = connection.get_redis_client()
-    print("Conectado ao Redis")
+    print("Conected to Redis")
 
 if __name__ == "__main__":
     main()
