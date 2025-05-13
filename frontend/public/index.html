@@ -75,12 +75,20 @@
           type="text"
           placeholder="Votre message..."
         />
-        <button
-          id="sendBtn"
-          class="bg-blue-600 hover:bg-blue-700 text-white w-full py-2 rounded"
-        >
-          Envoyer
-        </button>
+        <div class="flex flex-col gap-3">
+          <button
+            id="sendBtn"
+            class="bg-blue-600 hover:bg-blue-700 text-white w-full py-2 rounded"
+          >
+            Envoyer
+          </button>
+          <button
+            id="deleteChatBtn"
+            class="text-red-600 border border-red-600 hover:bg-red-50 w-full py-2 rounded"
+          >
+            🗑️ Supprimer Chat
+          </button>
+        </div>
       </div>
     </div>
 

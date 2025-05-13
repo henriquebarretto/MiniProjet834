@@ -1,4 +1,3 @@
-// Conteúdo anterior do chat.js com correção para mensagens privadas
 let socket = null;
 let token = null;
 let currentRecipient = null;
@@ -122,6 +121,26 @@ document.getElementById("backToListBtn").addEventListener("click", () => {
   document.getElementById("chatScreen").classList.add("hidden");
   document.getElementById("conversationListScreen").classList.remove("hidden");
 });
+
+document.getElementById("deleteChatBtn").addEventListener("click", async () => {
+  if (!currentRecipient) return;
+  const confirmDelete = confirm(`Supprimer la conversation avec ${currentRecipient} ?`);
+  if (!confirmDelete) return;
+
+  await fetch(`http://localhost:8000/chat/${currentRecipient}`, {
+    method: "DELETE",
+    headers: {
+      token: token,
+    },
+  });
+
+  alert("Conversation supprimée.");
+  if (socket) socket.close();
+  document.getElementById("chatScreen").classList.add("hidden");
+  document.getElementById("conversationListScreen").classList.remove("hidden");
+  loadConversationList();
+});
+
 
 const newChatBtn = document.getElementById("newChatBtn");
 const newChatModal = document.getElementById("newChatModal");

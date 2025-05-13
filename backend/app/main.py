@@ -117,3 +117,11 @@ async def get_contacts(token: str = Header(...)):
 async def list_users(token: str = Header(...)):
     current_user = get_username_by_token(token)
     return {"users": [u for u in users_db if u != current_user]}
+
+@app.delete("/chat/{target_user}")
+async def delete_chat(target_user: str, token: str = Header(...)):
+    username = get_username_by_token(token)
+    # Remove histórico local
+    message_history.get(username, {}).pop(target_user, None)
+    user_conversations.get(username, set()).discard(target_user)
+    return {"status": "ok", "message": f"Conversation avec {target_user} supprimée."}
