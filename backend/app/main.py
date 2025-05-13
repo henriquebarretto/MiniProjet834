@@ -13,6 +13,12 @@ import secrets
 import sys
 import os
 import json
+from motor.motor_asyncio import AsyncIOMotorClient
+
+MONGO_URL = "mongodb://localhost:27017"
+client = AsyncIOMotorClient(MONGO_URL)
+db = client["chat_db"]
+messages_collection = db["messages"]
 
 app = FastAPI()
 
@@ -41,6 +47,7 @@ app.add_middleware(
 connected_users: dict[str, WebSocket] = {}
 user_conversations: dict[str, set[str]] = {}
 
+
 @app.post("/login")
 async def login(username: str = Form(...), password: str = Form(...)):
     user = users_db.get(username)
@@ -50,15 +57,18 @@ async def login(username: str = Form(...), password: str = Form(...)):
         return {"token": token}
     raise HTTPException(status_code=401, detail="Invalid credentials")
 
+
 def get_username_by_token(token: str) -> str:
     username = tokens.get(token)
     if not username:
         raise HTTPException(status_code=401, detail="Invalid token")
     return username
 
+
 @app.get("/")
 async def root():
     return {"message": "API de chat avec WebSocket opérationnelle !"}
+
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
@@ -75,11 +85,14 @@ async def websocket_endpoint(websocket: WebSocket):
     connected_users[username] = websocket
     print(f"{username} connecté.")
 
-    # Enviar histórico completo de mensagens com cada destinatário
-    if username in message_history:
-        for other_user, messages in message_history[username].items():
-            for msg in messages:
-                await websocket.send_text(json.dumps(msg))
+    # Buscar mensagens onde o usuário é remetente ou destinatário
+    cursor = messages_collection.find({"$or": [{"from": username}, {"to": username}]})
+    async for msg in cursor:
+        await websocket.send_text(
+            json.dumps(
+                {"from": msg["from"], "to": msg["to"], "message": msg["message"]}
+            )
+        )
 
     try:
         while True:
@@ -94,34 +107,56 @@ async def websocket_endpoint(websocket: WebSocket):
 
             msg_obj = {"from": username, "to": recipient, "message": message}
 
-            message_history.setdefault(username, {}).setdefault(recipient, []).append(msg_obj)
-            message_history.setdefault(recipient, {}).setdefault(username, []).append(msg_obj)
+            await messages_collection.insert_one(msg_obj)
 
             user_conversations.setdefault(username, set()).add(recipient)
             user_conversations.setdefault(recipient, set()).add(username)
 
             if recipient in connected_users:
-                await connected_users[recipient].send_text(json.dumps(msg_obj))
+                msg_to_send = dict(msg_obj)
+                msg_to_send.pop("_id", None)  # Remove _id se estiver presente
+                await connected_users[recipient].send_text(json.dumps(msg_to_send))
 
     except WebSocketDisconnect:
         del connected_users[username]
         print(f"{username} déconnecté.")
 
+
 @app.get("/contacts")
 async def get_contacts(token: str = Header(...)):
     username = get_username_by_token(token)
-    contacts = list(user_conversations.get(username, set()))
+
+    # Consulta no MongoDB para descobrir com quem o usuário trocou mensagens
+    pipeline = [
+        {"$match": {"$or": [{"from": username}, {"to": username}]}},
+        {
+            "$project": {
+                "contact": {"$cond": [{"$eq": ["$from", username]}, "$to", "$from"]}
+            }
+        },
+        {"$group": {"_id": "$contact"}},
+    ]
+    results = await messages_collection.aggregate(pipeline).to_list(length=None)
+    contacts = [doc["_id"] for doc in results]
+
     return {"contacts": contacts}
+
 
 @app.get("/users")
 async def list_users(token: str = Header(...)):
     current_user = get_username_by_token(token)
     return {"users": [u for u in users_db if u != current_user]}
 
+
 @app.delete("/chat/{target_user}")
 async def delete_chat(target_user: str, token: str = Header(...)):
     username = get_username_by_token(token)
-    # Remove histórico local
-    message_history.get(username, {}).pop(target_user, None)
-    user_conversations.get(username, set()).discard(target_user)
+    await messages_collection.delete_many(
+        {
+            "$or": [
+                {"from": username, "to": target_user},
+                {"from": target_user, "to": username},
+            ]
+        }
+    )
     return {"status": "ok", "message": f"Conversation avec {target_user} supprimée."}
