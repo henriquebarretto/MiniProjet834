@@ -1,6 +1,24 @@
+// Conteúdo anterior do chat.js com correção para mensagens privadas
 let socket = null;
 let token = null;
 let currentRecipient = null;
+let currentUsername = null;
+
+const messagesBox = document.getElementById("messages");
+
+function clearMessages() {
+  messagesBox.innerHTML = "";
+}
+
+function addMessage(from, message) {
+  const msg = document.createElement("div");
+  msg.textContent = `${from === "Vous" ? "Vous" : from} : ${message}`;
+  if (from === "Vous") {
+    msg.classList.add("text-right", "text-blue-600");
+  }
+  messagesBox.appendChild(msg);
+  messagesBox.scrollTop = messagesBox.scrollHeight;
+}
 
 document.getElementById("loginBtn").addEventListener("click", async () => {
   const username = document.getElementById("loginUsername").value.trim();
@@ -18,12 +36,10 @@ document.getElementById("loginBtn").addEventListener("click", async () => {
   if (res.ok) {
     const data = await res.json();
     token = data.token;
+    currentUsername = username;
     document.getElementById("loginScreen").classList.add("hidden");
-    document
-      .getElementById("conversationListScreen")
-      .classList.remove("hidden");
-
-    loadConversationList(username);
+    document.getElementById("conversationListScreen").classList.remove("hidden");
+    loadConversationList();
   } else {
     document.getElementById("loginError").classList.remove("hidden");
   }
@@ -34,7 +50,6 @@ async function loadConversationList() {
   conversationList.innerHTML = "";
 
   const res = await fetch("http://localhost:8000/contacts", {
-    method: "GET",
     headers: {
       "Content-Type": "application/json",
       token: token,
@@ -60,8 +75,6 @@ async function loadConversationList() {
       li.addEventListener("click", () => openChatWith(user));
       conversationList.appendChild(li);
     });
-  } else {
-    console.error("Erreur lors du chargement des contacts.");
   }
 }
 
@@ -69,19 +82,20 @@ function openChatWith(recipient) {
   currentRecipient = recipient;
   document.getElementById("conversationListScreen").classList.add("hidden");
   document.getElementById("chatScreen").classList.remove("hidden");
-  document.getElementById(
-    "chatHeader"
-  ).textContent = `💬 Chat avec ${recipient}`;
+  document.getElementById("chatHeader").textContent = `💬 Chat avec ${recipient}`;
 
+  if (socket) socket.close();
   socket = new WebSocket(`ws://localhost:8000/ws?token=${token}`);
-  const messagesBox = document.getElementById("messages");
-  messagesBox.innerHTML = "";
+  clearMessages();
 
   socket.onmessage = (event) => {
-    const msg = document.createElement("div");
-    msg.textContent = event.data;
-    messagesBox.appendChild(msg);
-    messagesBox.scrollTop = messagesBox.scrollHeight;
+    const data = JSON.parse(event.data);
+    if (
+      (data.from === currentRecipient && data.to === currentUsername) ||
+      (data.from === currentUsername && data.to === currentRecipient)
+    ) {
+      addMessage(data.from === currentUsername ? "Vous" : data.from, data.message);
+    }
   };
 
   socket.onclose = () => {
@@ -96,18 +110,10 @@ document.getElementById("sendBtn").addEventListener("click", () => {
   const msgInput = document.getElementById("messageInput");
   const message = msgInput.value.trim();
   if (message && socket && currentRecipient) {
-    // Adiciona a mensagem enviada à tela imediatamente
-    const messagesBox = document.getElementById("messages");
-    const msg = document.createElement("div");
-    msg.textContent = `Vous : ${message}`;
-    msg.classList.add("text-right", "text-blue-600");
-    messagesBox.appendChild(msg);
-    messagesBox.scrollTop = messagesBox.scrollHeight;
-
-    // Envia a mensagem ao servidor
     socket.send(JSON.stringify({ to: currentRecipient, message }));
+    addMessage("Vous", message);
     msgInput.value = "";
-    loadConversationList(); // Atualiza a lista para incluir novo contato
+    loadConversationList();
   }
 });
 
@@ -137,9 +143,7 @@ userSearchInput.addEventListener("input", () => {
   const query = userSearchInput.value.toLowerCase();
   const items = userSearchList.querySelectorAll("li");
   items.forEach((item) => {
-    item.style.display = item.textContent.toLowerCase().includes(query)
-      ? "block"
-      : "none";
+    item.style.display = item.textContent.toLowerCase().includes(query) ? "block" : "none";
   });
 });
 
