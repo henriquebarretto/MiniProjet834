@@ -17,6 +17,7 @@
     t1: mongod --port 27017 --dbpath "/Users/henriquebarretto/Library/CloudStorage/OneDrive-Pessoal/ECOMP SENAI CIMATEC/AAA Polytech Annecy/S8/INFO 834 - Bases de données distribuées/MiniProjet834/dbs/db1" --replSet rs0 --bind_ip 127.0.0.1
     t2: mongod --port 27018 --dbpath "/Users/henriquebarretto/Library/CloudStorage/OneDrive-Pessoal/ECOMP SENAI CIMATEC/AAA Polytech Annecy/S8/INFO 834 - Bases de données distribuées/MiniProjet834/dbs/db2" --replSet rs0 --bind_ip 127.0.0.1
     t3: mongod --port 27019 --dbpath "/Users/henriquebarretto/Library/CloudStorage/OneDrive-Pessoal/ECOMP SENAI CIMATEC/AAA Polytech Annecy/S8/INFO 834 - Bases de données distribuées/MiniProjet834/dbs/db3" --replSet rs0 --bind_ip 127.0.0.1
+    t4: mongod --port 27020 --dbpath "/Users/henriquebarretto/Library/CloudStorage/OneDrive-Pessoal/ECOMP SENAI CIMATEC/AAA Polytech Annecy/S8/INFO 834 - Bases de données distribuées/MiniProjet834/dbs/db4" --replSet rs0 --bind_ip 127.0.0.1
 
     Conectar no mongosh na porta 27017 (terminal n4):
         mongosh --port 27017
@@ -27,6 +28,7 @@
     Adicionar os outros membros (terminal n4):
         rs.add("localhost:27018")
         rs.add("localhost:27019")
+        rs.add("localhost:27020")
 
     Verificar o status (terminal n4):
         rs.status()

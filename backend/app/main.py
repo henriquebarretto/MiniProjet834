@@ -57,7 +57,7 @@ def log_user_logout(username: str):
 
 
 #MONGO_URL = "mongodb://localhost:27017" #pas de replicaset
-MONGO_URL = "mongodb://localhost:27017,localhost:27018,localhost:27019/?replicaSet=rs0" #avec replicaset
+MONGO_URL = "mongodb://localhost:27017,localhost:27018,localhost:27019,localhost:27020/?replicaSet=rs0" #avec replicaset
 client = AsyncIOMotorClient(MONGO_URL)
 db = client["chat_db"]
 messages_collection = db["messages"]
