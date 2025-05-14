@@ -34,10 +34,10 @@ Chaque branche est dédiée à une fonctionnalité spécifique, facilitant ainsi
 
 
 ## Fonctionnalités attendues
-- [ ] Connexion et déconnexion d'utilisateurs
+- [X] Connexion et déconnexion d'utilisateurs
 - [ ] Affichage des utilisateurs actuellement en ligne (via Redis)
-- [ ] Envoi et réception de messages
-- [ ] Stockage des messages dans MongoDB
-- [ ] Affichage de l’historique des conversations
+- [X] Envoi et réception de messages
+- [X] Stockage des messages dans MongoDB
+- [X] Affichage de l’historique des conversations
 - [ ] Requêtes analytiques (utilisateur le plus actif, etc.)
 - [ ] Mise en place d’un ReplicaSet MongoDB
