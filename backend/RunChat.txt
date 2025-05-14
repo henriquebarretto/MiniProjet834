@@ -14,8 +14,8 @@
     *Abrir 4 terminais.
     
     Iniciar os três mongod com as configurações do replica set:
-    t1: mongod --port 27017 --dbpath "/Users/henriquebarretto/Library/CloudStorage/OneDrive-Pessoal/ECOMP SENAI CIMATEC/AAA Polytech Annecy/S8/INFO 834 - Bases de données distribuées/MiniProjet834/dbs/db3" --replSet rs0 --bind_ip 127.0.0.1
-    t2: mongod --port 27018 --dbpath "/Users/henriquebarretto/Library/CloudStorage/OneDrive-Pessoal/ECOMP SENAI CIMATEC/AAA Polytech Annecy/S8/INFO 834 - Bases de données distribuées/MiniProjet834/dbs/db3" --replSet rs0 --bind_ip 127.0.0.1
+    t1: mongod --port 27017 --dbpath "/Users/henriquebarretto/Library/CloudStorage/OneDrive-Pessoal/ECOMP SENAI CIMATEC/AAA Polytech Annecy/S8/INFO 834 - Bases de données distribuées/MiniProjet834/dbs/db1" --replSet rs0 --bind_ip 127.0.0.1
+    t2: mongod --port 27018 --dbpath "/Users/henriquebarretto/Library/CloudStorage/OneDrive-Pessoal/ECOMP SENAI CIMATEC/AAA Polytech Annecy/S8/INFO 834 - Bases de données distribuées/MiniProjet834/dbs/db2" --replSet rs0 --bind_ip 127.0.0.1
     t3: mongod --port 27019 --dbpath "/Users/henriquebarretto/Library/CloudStorage/OneDrive-Pessoal/ECOMP SENAI CIMATEC/AAA Polytech Annecy/S8/INFO 834 - Bases de données distribuées/MiniProjet834/dbs/db3" --replSet rs0 --bind_ip 127.0.0.1
 
     Conectar no mongosh na porta 27017 (terminal n4):
