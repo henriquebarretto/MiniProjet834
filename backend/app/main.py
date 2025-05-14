@@ -31,7 +31,7 @@ try:
     if response:
         print("Redis ça marche!")
 except redis.ConnectionError as e:
-    print(f"Redis ne peut pas se connectée {e}")
+    print(f"Redis ne peut pas se connecter {e}")
 
 # Clé secrète et algorithme pour les tokens JWT
 SECRET_KEY = "seu_seguro_segredo"
