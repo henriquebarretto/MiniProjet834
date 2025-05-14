@@ -3,3 +3,5 @@ fastapi
 uvicorn
 'uvicorn[standard]'
 motor
+redis
+python-jose
