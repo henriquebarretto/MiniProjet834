@@ -38,7 +38,7 @@
     - Teste de tolerância a falhas
     
     Desligue o nó primário (27017):
-        mongo --port 27017
+        mongosh --port 27017
         db.adminCommand({ shutdown: 1 })
     
     - Verifique se um dos nós secundários se tornou o primário:
