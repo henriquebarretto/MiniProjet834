@@ -14,6 +14,47 @@ import sys
 import os
 import json
 from motor.motor_asyncio import AsyncIOMotorClient
+from fastapi import Query
+from jose import JWTError, jwt
+import redis
+from datetime import datetime
+
+r = redis.Redis(host="localhost", port=6379, db=0, decode_responses=True)
+
+# Testando a conexão
+try:
+    response = r.ping()  # Envia um ping para o Redis
+    if response:
+        print("Conexão com Redis bem-sucedida!")
+except redis.ConnectionError as e:
+    print(f"Erro ao conectar no Redis: {e}")
+
+SECRET_KEY = "seu_seguro_segredo"
+ALGORITHM = "HS256"
+
+
+def decode_token(token: str):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username = payload.get("sub")
+        if username is None:
+            raise ValueError("Token inválido: sem 'sub'")
+        return username
+    except JWTError:
+        raise ValueError("Token inválido")
+
+
+def log_user_login(username: str):
+    timestamp = datetime.utcnow().isoformat()
+    r.lpush(f"logins:{username}", timestamp)
+    r.set(f"online:{username}", 1)
+
+
+def log_user_logout(username: str):
+    timestamp = datetime.utcnow().isoformat()
+    r.lpush(f"logouts:{username}", timestamp)
+    r.delete(f"online:{username}")
+
 
 MONGO_URL = "mongodb://localhost:27017"
 client = AsyncIOMotorClient(MONGO_URL)
@@ -54,6 +95,7 @@ async def login(username: str = Form(...), password: str = Form(...)):
     if user and secrets.compare_digest(user["password"], password):
         token = secrets.token_hex(16)
         tokens[token] = username
+        log_user_login(username)
         return {"token": token}
     raise HTTPException(status_code=401, detail="Invalid credentials")
 
@@ -82,10 +124,14 @@ async def websocket_endpoint(websocket: WebSocket):
         await websocket.close()
         return
 
+    # Add the user to the connected_users dictionary
     connected_users[username] = websocket
     print(f"{username} connecté.")
 
-    # Buscar mensagens onde o usuário é remetente ou destinatário
+    # Set the user as 'online' in Redis
+    r.set(f"user:{username}", "online")
+
+    # Fetch and send the user's message history (messages where the user is either the sender or recipient)
     cursor = messages_collection.find({"$or": [{"from": username}, {"to": username}]})
     async for msg in cursor:
         await websocket.send_text(
@@ -96,6 +142,7 @@ async def websocket_endpoint(websocket: WebSocket):
 
     try:
         while True:
+            # Handle incoming messages
             data = await websocket.receive_text()
             try:
                 parsed = json.loads(data)
@@ -107,18 +154,24 @@ async def websocket_endpoint(websocket: WebSocket):
 
             msg_obj = {"from": username, "to": recipient, "message": message}
 
+            # Store the message in MongoDB
             await messages_collection.insert_one(msg_obj)
 
+            # Update the conversations for both the sender and recipient
             user_conversations.setdefault(username, set()).add(recipient)
             user_conversations.setdefault(recipient, set()).add(username)
 
+            # If the recipient is connected, send the message to them
             if recipient in connected_users:
                 msg_to_send = dict(msg_obj)
-                msg_to_send.pop("_id", None)  # Remove _id se estiver presente
+                msg_to_send.pop("_id", None)  # Remove _id if present
                 await connected_users[recipient].send_text(json.dumps(msg_to_send))
 
     except WebSocketDisconnect:
+        # When the WebSocket is disconnected, remove the user from connected_users and set them as 'offline' in Redis
         del connected_users[username]
+        r.set(f"user:{username}", "offline")  # Set user status as offline
+        log_user_logout(username)
         print(f"{username} déconnecté.")
 
 
@@ -160,3 +213,9 @@ async def delete_chat(target_user: str, token: str = Header(...)):
         }
     )
     return {"status": "ok", "message": f"Conversation avec {target_user} supprimée."}
+
+
+@app.get("/online-users")
+def list_online_users():
+    keys = r.keys("user:*")
+    return [key.replace("user:", "") for key in keys]

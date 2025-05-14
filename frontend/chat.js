@@ -20,6 +20,7 @@ function addMessage(from, message) {
 }
 
 document.getElementById("loginBtn").addEventListener("click", async () => {
+  console.log("aa");
   const username = document.getElementById("loginUsername").value.trim();
   const password = document.getElementById("loginPassword").value;
 
@@ -27,17 +28,23 @@ document.getElementById("loginBtn").addEventListener("click", async () => {
   formData.append("username", username);
   formData.append("password", password);
 
+  console.log("Enviando requisição de login...");
+
   const res = await fetch("http://localhost:8000/login", {
     method: "POST",
     body: formData,
   });
+
+  console.log("Resposta do login:", res);
 
   if (res.ok) {
     const data = await res.json();
     token = data.token;
     currentUsername = username;
     document.getElementById("loginScreen").classList.add("hidden");
-    document.getElementById("conversationListScreen").classList.remove("hidden");
+    document
+      .getElementById("conversationListScreen")
+      .classList.remove("hidden");
     loadConversationList();
   } else {
     document.getElementById("loginError").classList.remove("hidden");
@@ -81,7 +88,9 @@ function openChatWith(recipient) {
   currentRecipient = recipient;
   document.getElementById("conversationListScreen").classList.add("hidden");
   document.getElementById("chatScreen").classList.remove("hidden");
-  document.getElementById("chatHeader").textContent = `💬 Chat avec ${recipient}`;
+  document.getElementById(
+    "chatHeader"
+  ).textContent = `💬 Chat avec ${recipient}`;
 
   if (socket) socket.close();
   socket = new WebSocket(`ws://localhost:8000/ws?token=${token}`);
@@ -93,7 +102,10 @@ function openChatWith(recipient) {
       (data.from === currentRecipient && data.to === currentUsername) ||
       (data.from === currentUsername && data.to === currentRecipient)
     ) {
-      addMessage(data.from === currentUsername ? "Vous" : data.from, data.message);
+      addMessage(
+        data.from === currentUsername ? "Vous" : data.from,
+        data.message
+      );
     }
   };
 
@@ -124,7 +136,9 @@ document.getElementById("backToListBtn").addEventListener("click", () => {
 
 document.getElementById("deleteChatBtn").addEventListener("click", async () => {
   if (!currentRecipient) return;
-  const confirmDelete = confirm(`Supprimer la conversation avec ${currentRecipient} ?`);
+  const confirmDelete = confirm(
+    `Supprimer la conversation avec ${currentRecipient} ?`
+  );
   if (!confirmDelete) return;
 
   await fetch(`http://localhost:8000/chat/${currentRecipient}`, {
@@ -140,7 +154,6 @@ document.getElementById("deleteChatBtn").addEventListener("click", async () => {
   document.getElementById("conversationListScreen").classList.remove("hidden");
   loadConversationList();
 });
-
 
 const newChatBtn = document.getElementById("newChatBtn");
 const newChatModal = document.getElementById("newChatModal");
@@ -162,7 +175,9 @@ userSearchInput.addEventListener("input", () => {
   const query = userSearchInput.value.toLowerCase();
   const items = userSearchList.querySelectorAll("li");
   items.forEach((item) => {
-    item.style.display = item.textContent.toLowerCase().includes(query) ? "block" : "none";
+    item.style.display = item.textContent.toLowerCase().includes(query)
+      ? "block"
+      : "none";
   });
 });
 
