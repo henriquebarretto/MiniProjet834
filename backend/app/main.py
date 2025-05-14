@@ -67,10 +67,10 @@ app = FastAPI()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 users_db = {
-    "alice": {"username": "alice", "password": "1234"},
-    "bob": {"username": "bob", "password": "1234"},
+    "fran": {"username": "fran", "password": "1234"},
+    "sol": {"username": "sol", "password": "1234"},
     "dan": {"username": "dan", "password": "1234"},
-    "henrique": {"username": "henrique", "password": "1234"},
+    "rique": {"username": "rique", "password": "1234"},
 }
 
 tokens: Dict[str, str] = {}
